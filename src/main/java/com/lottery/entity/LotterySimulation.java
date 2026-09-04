@@ -1,0 +1,39 @@
+package com.lottery.entity;
+
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@TableName("lottery_simulation")
+public class LotterySimulation {
+
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    private String lotteryCode;
+    private String baseIssueNo;
+    private Integer sampleIssues;
+    private Integer setCount;
+    private String algorithmVersion;
+    private String method;
+    private String fixedRed;
+    private String fixedBlue;
+    private String setsJson;
+    private String disclaimer;
+
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
+
+    @TableLogic
+    private Integer deleted;
+}

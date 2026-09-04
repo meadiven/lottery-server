@@ -1,0 +1,25 @@
+# 本地开发环境（本机）
+server:
+  # 监听所有网卡，允许局域网设备访问
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/lottery_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: '5ystJrL(o=-w'
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: 's9$kP7&rT2@zX5!bQ'
+      database: 0
+      timeout: 3000ms
+
+logging:
+  level:
+    root: INFO
+    com.lottery: DEBUG
+    com.lottery.collector: DEBUG
+    com.lottery.service.impl.CollectServiceImpl: DEBUG

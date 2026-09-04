@@ -1,0 +1,32 @@
+# 生产环境（云服务器）
+# 敏感信息请用环境变量注入，勿把真实密码写入仓库
+server:
+  address: 0.0.0.0
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:lottery_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 3000ms
+
+lottery:
+  collect:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.lottery: INFO
+    com.lottery.collector: INFO
+    com.lottery.service.impl.CollectServiceImpl: INFO
+  file:
+    name: logs/lottery-server.log
