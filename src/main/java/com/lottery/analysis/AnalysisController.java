@@ -1,9 +1,11 @@
 package com.lottery.analysis;
 
 import com.lottery.common.result.Result;
+import com.lottery.dto.response.AlgorithmSelectVO;
 import com.lottery.dto.response.FrequencyStatVO;
 import com.lottery.dto.response.RandomSetsVO;
 import com.lottery.dto.response.SimulationBatchVO;
+import com.lottery.dto.response.SimulationEvaluateVO;
 import com.lottery.dto.response.SimulationVerifyVO;
 import com.lottery.service.analysis.LotteryAnalysisService;
 import com.lottery.service.simulation.LotterySimulationService;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 统计分析接口。
@@ -32,9 +36,6 @@ public class AnalysisController {
     private final LotteryAnalysisService analysisService;
     private final LotterySimulationService simulationService;
 
-    /**
-     * 号码出现频次统计（描述性统计，非预测）。
-     */
     @GetMapping("/{lotteryCode}/frequency")
     public Result<FrequencyStatVO> frequency(
             @PathVariable @NotBlank String lotteryCode,
@@ -42,9 +43,6 @@ public class AnalysisController {
         return Result.ok(analysisService.frequencyStats(lotteryCode.toUpperCase(), recentIssues));
     }
 
-    /**
-     * 基于历史频次加权随机生成若干组模拟号码（即时，不落库；教学对比用）。
-     */
     @GetMapping("/{lotteryCode}/random-sets")
     public Result<RandomSetsVO> randomSets(
             @PathVariable @NotBlank String lotteryCode,
@@ -53,9 +51,6 @@ public class AnalysisController {
         return Result.ok(analysisService.randomSets(lotteryCode.toUpperCase(), count, recentIssues));
     }
 
-    /**
-     * 均匀独立无放回抽样（即时，不落库；贴合公平开奖零假设）。
-     */
     @GetMapping("/{lotteryCode}/uniform-sets")
     public Result<RandomSetsVO> uniformSets(
             @PathVariable @NotBlank String lotteryCode,
@@ -63,29 +58,39 @@ public class AnalysisController {
         return Result.ok(analysisService.uniformRandomSets(lotteryCode.toUpperCase(), count));
     }
 
-    /**
-     * 开奖后自动生成的最新模拟批次（落库）。
-     */
     @GetMapping("/{lotteryCode}/simulations/latest")
     public Result<SimulationBatchVO> latestSimulation(@PathVariable @NotBlank String lotteryCode) {
         return Result.ok(simulationService.latest(lotteryCode.toUpperCase()));
     }
 
-    /**
-     * 按开奖日凌晨逻辑补生成（最新已开奖期号 + 1）。
-     */
     @PostMapping("/{lotteryCode}/simulations/generate")
     public Result<SimulationBatchVO> generateSimulation(@PathVariable @NotBlank String lotteryCode) {
         return Result.ok(simulationService.generateForDrawDayMorning(lotteryCode.toUpperCase()));
     }
 
-    /**
-     * 蒙特卡洛 + 卡方检验，验证均匀抽样是否贴合公平开奖零假设。
-     */
     @GetMapping("/{lotteryCode}/simulations/verify")
     public Result<SimulationVerifyVO> verifySimulation(
             @PathVariable @NotBlank String lotteryCode,
             @RequestParam(defaultValue = "10000") int trials) {
         return Result.ok(simulationService.verifyUniform(lotteryCode.toUpperCase(), trials));
+    }
+
+    @GetMapping("/{lotteryCode}/simulations/evaluate/history")
+    public Result<List<SimulationEvaluateVO>> evaluateHistory(
+            @PathVariable @NotBlank String lotteryCode,
+            @RequestParam(defaultValue = "20") int limit) {
+        return Result.ok(simulationService.evaluateHistory(lotteryCode.toUpperCase(), limit));
+    }
+
+    @GetMapping("/{lotteryCode}/simulations/select")
+    public Result<AlgorithmSelectVO> selectAlgorithm(@PathVariable @NotBlank String lotteryCode) {
+        return Result.ok(simulationService.selectAlgorithm(lotteryCode.toUpperCase()));
+    }
+
+    @GetMapping("/{lotteryCode}/simulations/{issueNo}/evaluate")
+    public Result<SimulationEvaluateVO> evaluateIssue(
+            @PathVariable @NotBlank String lotteryCode,
+            @PathVariable @NotBlank String issueNo) {
+        return Result.ok(simulationService.evaluateIssue(lotteryCode.toUpperCase(), issueNo));
     }
 }

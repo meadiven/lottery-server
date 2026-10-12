@@ -8,3 +8,8 @@ target/
 *.log
 .DS_Store
 *.class
+# 生产密钥（仅留在服务器）
+*.env
+!scripts/lottery-server.env.example
+lottery-server.pid
+logs/

@@ -110,6 +110,35 @@ public class LotteryAnalysisServiceImpl implements LotteryAnalysisService {
                 .build();
     }
 
+    @Override
+    public RandomSetsVO randomSetsBeforeIssue(String lotteryCode, int count, String beforeIssueNo) {
+        LotteryCodeEnum code = LotteryCodeEnum.of(lotteryCode);
+        int setCount = Math.min(Math.max(count, 1), 10);
+        List<LotteryDraw> draws = loadDrawsBeforeIssue(code.getCode(), beforeIssueNo);
+
+        Map<String, Long> redFreq = new HashMap<>();
+        Map<String, Long> blueFreq = new HashMap<>();
+        for (LotteryDraw draw : draws) {
+            countBalls(draw.getRedBalls(), redFreq);
+            countBalls(draw.getBlueBalls(), blueFreq);
+        }
+
+        List<RandomSetsVO.RandomSetItem> sets = new ArrayList<>();
+        for (int i = 1; i <= setCount; i++) {
+            sets.add(buildOneSet(code, i, redFreq, blueFreq, false));
+        }
+
+        return RandomSetsVO.builder()
+                .lotteryCode(code.getCode())
+                .lotteryName(code.getName())
+                .sampleIssues(draws.size())
+                .setCount(setCount)
+                .method("历史频次加权随机抽样（无放回组合，截止开奖前期）")
+                .disclaimer(DISCLAIMER_FREQ)
+                .sets(sets)
+                .build();
+    }
+
     private RandomSetsVO.RandomSetItem buildOneSet(LotteryCodeEnum code,
                                                    int index,
                                                    Map<String, Long> redFreq,
@@ -246,6 +275,20 @@ public class LotteryAnalysisServiceImpl implements LotteryAnalysisService {
         List<LotteryDraw> draws = lotteryDrawMapper.selectList(wrapper);
         if (draws.isEmpty()) {
             throw new BusinessException(ResultCode.NOT_FOUND, "暂无可用于抽样的历史开奖数据");
+        }
+        return draws;
+    }
+
+    private List<LotteryDraw> loadDrawsBeforeIssue(String lotteryCode, String beforeIssueNo) {
+        if (StrUtil.isBlank(beforeIssueNo)) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "beforeIssueNo 不能为空");
+        }
+        List<LotteryDraw> draws = lotteryDrawMapper.selectList(new LambdaQueryWrapper<LotteryDraw>()
+                .eq(LotteryDraw::getLotteryCode, lotteryCode)
+                .lt(LotteryDraw::getIssueNo, beforeIssueNo)
+                .orderByDesc(LotteryDraw::getIssueNo));
+        if (draws.isEmpty()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "期号 " + beforeIssueNo + " 之前暂无历史开奖数据");
         }
         return draws;
     }

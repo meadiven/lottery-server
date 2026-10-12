@@ -21,35 +21,105 @@ Spring Boot 3.2 + JDK 17 + Maven + MyBatis-Plus + MySQL 8 + Redis
 | `dev`（默认） | `application-dev.yml` | 本地开发 |
 | `prod` | `application-prod.yml` | 云服务器生产环境 |
 
-公共配置在 `application.yml`。生产环境敏感信息建议用环境变量覆盖，不要写进仓库。
+公共配置在 `application.yml`。**生产密码只放服务器环境变量文件**，不要写进仓库。
 
-## 快速开始
+## 快速开始（本地）
 
 1. 建库并执行 DDL：`src/main/resources/db/schema.sql`
-2. 本地改 `application-dev.yml` 中 MySQL / Redis；生产用环境变量或改 `application-prod.yml`
-3. 启动：
+2. 改 `application-dev.yml` 中 MySQL / Redis
+3. 启动：`mvn spring-boot:run`
+
+## 生产发布操作（详细）
+
+### 一、本机打包
 
 ```bash
-# 本地开发（默认 dev）
-mvn spring-boot:run
-
-# 生产环境（云服务器）
-java -jar target/lottery-server-1.0.0-SNAPSHOT.jar --spring.profiles.active=prod
-```
-
-生产环境常用启动方式：
-
-```bash
-# 服务器上（已安装 JDK17、MySQL、Redis，并已执行 schema.sql）
+cd lottery-server
 mvn -DskipTests package
-chmod +x scripts/*.sh
-./scripts/start-prod.sh
-# 停止: ./scripts/stop-prod.sh
 ```
 
-Nginx Proxy Manager 转发目标填：`http://127.0.0.1:8080`（应用 context-path 为 `/api`）。
+产物：`target/lottery-server-1.0.0-SNAPSHOT.jar`
 
-生产环境账号写在 `application-prod.yml`；也可用环境变量覆盖（见历史说明）。
+### 二、服务器准备（首次）
+
+1. 已安装 JDK 17、本机 Redis；MySQL 可用腾讯云 CDB  
+2. CDB 白名单加入**云服务器公网 IP**  
+3. 建库/迁移（按需）：
+   - 全量：`src/main/resources/db/schema.sql`
+   - 增量：`migration_simulation.sql`、`migration_simulation_eval.sql`
+4. 创建环境变量文件（**不要提交 git**）：
+
+```bash
+sudo cp scripts/lottery-server.env.example /etc/lottery-server.env
+sudo chmod 600 /etc/lottery-server.env
+sudo nano /etc/lottery-server.env
+```
+
+填入真实值（示例）：
+
+```bash
+MYSQL_HOST=gz-cdb-lns1pwrz.sql.tencentcdb.com
+MYSQL_PORT=28293
+MYSQL_DB=lottery_db
+MYSQL_USER=root
+MYSQL_PASSWORD=你的MySQL密码
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_DB=0
+SPRING_DATA_REDIS_PASSWORD=你的Redis密码
+```
+
+5. 授权脚本：`chmod +x scripts/*.sh`
+
+### 三、上传与启动
+
+上传到服务器项目目录（至少包含）：
+
+- `target/lottery-server-1.0.0-SNAPSHOT.jar`
+- `scripts/start-prod.sh`、`scripts/stop-prod.sh`
+
+```bash
+# 可选：自定义 env 路径
+# export LOTTERY_ENV_FILE=/etc/lottery-server.env
+
+./scripts/stop-prod.sh
+./scripts/start-prod.sh
+```
+
+`start-prod.sh` 会自动 `source /etc/lottery-server.env`。
+
+### 四、验收
+
+```bash
+# 进程
+cat lottery-server.pid && ps -p $(cat lottery-server.pid)
+
+# 本机接口
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8080/api/
+
+# 日志
+tail -f logs/stdout.log
+```
+
+模拟相关（登录拿 token 后）：
+
+```text
+GET  /api/analysis/DLT/simulations/latest
+GET  /api/analysis/DLT/simulations/evaluate/history?limit=20
+GET  /api/analysis/DLT/simulations/select
+POST /api/analysis/DLT/simulations/generate
+```
+
+### 五、反向代理（可选）
+
+Nginx Proxy Manager 转发到：`http://127.0.0.1:8080`（context-path 为 `/api`）。  
+小程序 `BASE_URL` 改为 `https://你的域名/api` 或 `http://公网IP:8080/api`。
+
+### 六、停止
+
+```bash
+./scripts/stop-prod.sh
+```
 
 ## 主要接口
 

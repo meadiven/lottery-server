@@ -1,9 +1,10 @@
 package com.lottery.service.simulation;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.lottery.config.properties.LotterySimulationProperties;
 import com.lottery.dto.response.SimulationVerifyVO;
-import com.lottery.entity.LotteryDraw;
 import com.lottery.mapper.LotteryDrawMapper;
+import com.lottery.mapper.LotterySimulationEvalMapper;
 import com.lottery.mapper.LotterySimulationMapper;
 import com.lottery.service.analysis.impl.LotteryAnalysisServiceImpl;
 import com.lottery.service.simulation.impl.LotterySimulationServiceImpl;
@@ -24,8 +25,10 @@ class LotterySimulationUniformVerifyTest {
 
         LotterySimulationServiceImpl service = new LotterySimulationServiceImpl(
                 mock(LotterySimulationMapper.class),
+                mock(LotterySimulationEvalMapper.class),
                 drawMapper,
-                new LotteryAnalysisServiceImpl(drawMapper)
+                new LotteryAnalysisServiceImpl(drawMapper),
+                new LotterySimulationProperties()
         );
 
         SimulationVerifyVO vo = service.verifyUniform("DLT", 10000);

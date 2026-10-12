@@ -54,6 +54,10 @@ lottery:
   simulation:
     enabled: true
     cron: "0 5 0 ? * MON,WED,SAT"
+    lookback-issues: 12
+    candidates:
+      - v2-uniform-iid
+      - v3-freq-weighted-all
   # 官方公开接口（仅公示数据，请勿高频调用）
   datasource:
     cwl-base-url: https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice

@@ -24,4 +24,9 @@ public interface LotteryAnalysisService {
      * 均匀独立无放回抽样，贴合公平开奖零假设（各合法号码等权）。
      */
     RandomSetsVO uniformRandomSets(String lotteryCode, int count);
+
+    /**
+     * 仅使用 issueNo 严格小于 beforeIssueNo 的历史做频次加权抽样（walk-forward，防泄漏）。
+     */
+    RandomSetsVO randomSetsBeforeIssue(String lotteryCode, int count, String beforeIssueNo);
 }

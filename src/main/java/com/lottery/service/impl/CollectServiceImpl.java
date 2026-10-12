@@ -16,6 +16,7 @@ import com.lottery.mapper.LotteryPrizeDetailMapper;
 import com.lottery.mapper.LotteryTypeMapper;
 import com.lottery.parser.DrawParseHelper;
 import com.lottery.service.CollectService;
+import com.lottery.service.simulation.LotterySimulationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DuplicateKeyException;
@@ -37,6 +38,7 @@ public class CollectServiceImpl implements CollectService {
     private final LotteryDrawMapper lotteryDrawMapper;
     private final LotteryPrizeDetailMapper prizeDetailMapper;
     private final CollectLogMapper collectLogMapper;
+    private final LotterySimulationService simulationService;
     private final Executor historyCollectExecutor;
 
     public CollectServiceImpl(List<LotteryCollector> collectors,
@@ -46,6 +48,7 @@ public class CollectServiceImpl implements CollectService {
                               LotteryDrawMapper lotteryDrawMapper,
                               LotteryPrizeDetailMapper prizeDetailMapper,
                               CollectLogMapper collectLogMapper,
+                              LotterySimulationService simulationService,
                               @Qualifier("historyCollectExecutor") Executor historyCollectExecutor) {
         this.collectors = collectors;
         this.rateLimiter = rateLimiter;
@@ -54,6 +57,7 @@ public class CollectServiceImpl implements CollectService {
         this.lotteryDrawMapper = lotteryDrawMapper;
         this.prizeDetailMapper = prizeDetailMapper;
         this.collectLogMapper = collectLogMapper;
+        this.simulationService = simulationService;
         this.historyCollectExecutor = historyCollectExecutor;
     }
 
@@ -253,6 +257,15 @@ public class CollectServiceImpl implements CollectService {
         }
         log.info("入库成功 {} 期号 {} 号码 {}",
                 result.getLotteryCode(), result.getIssueNo(), result.getDrawNumbers());
+        // 大乐透实开入库后，对照已有模拟批次做评估（失败不影响采集）
+        if (LotteryCodeEnum.DLT.getCode().equalsIgnoreCase(result.getLotteryCode())) {
+            try {
+                simulationService.evaluateIssue(result.getLotteryCode(), result.getIssueNo());
+            } catch (Exception ex) {
+                log.warn("模拟对照评估跳过/失败 code={} issue={}: {}",
+                        result.getLotteryCode(), result.getIssueNo(), ex.getMessage());
+            }
+        }
         return true;
     }
 
